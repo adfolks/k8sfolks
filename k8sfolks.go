@@ -39,5 +39,37 @@ func main() {
 	if err != nil {
 	log.Fatalf("cmd.Run() failed with %s\n", err)
 	}
-	fmt.Printf("Output:\n%s\n", string(out))
+    fmt.Printf("Output:\n%s\n", string(out))
+	//Get Kubectl credentials copied to ~/.kube/config
+	getKubectlConfig := exec.Command("az", "aks", "get-credentials", ""--resource-group", resourceGroupName, "--name",clusterName)
+	out, err = getKubectlConfig.CombinedOutput()
+	if err != nil {
+	log.Fatalf("getKubectlConfig.Run() Failed with %s\n", err)
+	}
+	fmt.Printf("Get kubectl config Output: \n%s\n", string(out))
+    //Initialize Helm
+	fmt.Println("Initialising Package manager Helm")
+	cmd = exec.Command("helm", "init")
+    out, err = cmd.CombinedOutput()
+    if err != nil {
+    log.Fatalf("cmd.Run() Failed with:\n%s\n", err)
+	}
+	fmt.Printf("Helm Init Output:\n%s\n", string(out))
+	//Install ElasticSearch
+	fmt.Println("Installing ElasticSearch with Helm")
+	helmIncubatorRepo := "http://storage.googleapis.com/kubernetes-charts-incubator"
+	addRepo := exec.Command("helm", "repo", "add", "incubator", helmIncubatorRepo)
+    out, err = addRepo.CombineOutput()
+    if err != nil {
+        log.Fatalf("Add Helm Repo failed with: \n%s\n" err)
+    }
+    fmt.Println("Helm Add repo output:\n%s\n", string(out))
+	installPackage := exec.Command("helm", "install", "--name", "elasticsearch", "incubator/elasticsearch")
+    //Install Kafka
+    installPackage = exec.Command("helm", "install", "--name", "kafka", "incubator/kafka")
+    out, err = installPackage.CombinedOutput()
+    if err != nil {
+    log.Fatalf("cmd.run() Failed with:\n%s\n", err)
+    }
+    fmt.Println("Package install Output:\n%s\n", string(out))
 }
