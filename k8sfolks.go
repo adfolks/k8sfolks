@@ -24,12 +24,14 @@ func getClusterName() string {
 }
 
 func getClusterRegion() string {
-	readerClusterRegion := bufio.NewReader(os.Stdin)
-	fmt.Println("Enter k8s cloud region:")
-	clusterRegion, _ := readerClusterRegion.ReadString('\n')
-	clusterRegion = strings.TrimSuffix(clusterRegion, "\n")
+	readerClusterName := bufio.NewReader(os.Stdin)
+	fmt.Println("Enter k8s cluster Region:")
+	clusterRegion, _ := readerClusterName.ReadString('\n')
+	clusterRegion = strings.TrimSuffix(clusterRegion,"\n")
 	return clusterRegion
 }
+
+
 func createResourceGroup(resourceGroupName string, clusterRegion string) {
 	cmd := exec.Command("az", "group", "create", "-l", clusterRegion, "-n",
 		 resourceGroupName)
@@ -41,7 +43,8 @@ func createResourceGroup(resourceGroupName string, clusterRegion string) {
 }
 
 func createCluster( clusterName string, resourceGroupName string) {
-	fmt.Println("Start setiing up your k8s Cluster")
+	fmt.Println("Starting to set up your k8s Cluster")
+	fmt.Println("This would take a few minutes...")
 	fmt.Println("---------------------------------")
 	//Create AKS Cluster
 	cmd := exec.Command("az", "aks", "create", "--name", clusterName,
@@ -77,7 +80,7 @@ func intializeHelm() {
 }
 
 func addHelmRepo(repoName string, repoURL string) {
-	fmt.Println("Adding Helm repo: %s", repoName)
+	fmt.Println("Adding Helm repo:", repoName)
 	cmd := exec.Command("helm", "repo", "add", repoName, repoURL)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -100,8 +103,9 @@ func createNamespace(nameSpace string) {
 func installPackage(packageName string, repoName string) {
 	//Create Namespace in same name as packageName
 	createNamespace(packageName)
+	repowithPackage := repoName + "/" + packageName
   cmd := exec.Command("helm", "install", "--name", packageName,
-		 "--namespace", packageName, "incubator/" + packageName)
+		 "--namespace", packageName, repowithPackage)
   out, err := cmd.CombinedOutput()
   if err != nil {
 		log.Fatalf("cmd.run() Failed with:\n%s\n", err)
@@ -109,25 +113,25 @@ func installPackage(packageName string, repoName string) {
   fmt.Println("Package install %s Output:\n%s\n", packageName, string(out))
 }
 
-func main() {	 clusterRegion := getClusterRegion()
+func main() {
    clusterName := getClusterName()
-	 //assign Azure Resource Group same name as cluster name
-	 resourceGroupName := clusterName
 	 clusterRegion := getClusterRegion()
-	 //Create Azure resource group
-	 createResourceGroup(clusterName, clusterRegion)
-	 //Create AKS cluster
-	 createCluster(clusterName, resourceGroupName)
-	 //Get kubectl config copied to ~/.kube/getKubectlConfig
-	 getKubectlConfig(clusterName, resourceGroupName)
-	 //intialize helm
-	 intializeHelm()
-	 //Add helm repo inucubator
-	 repoName := "incubator"
-	 repoURL := "http://storage.googleapis.com/kubernetes-charts-incubator"
-	 addHelmRepo(repoName, repoURL)
-	//Install ElasticSearch
-	installPackage("elasticsearch", repoName)
-  //Install Kafka
-	installPackage("kafka", repoName)
+   //assign Azure Resource Group same name as cluster name
+   resourceGroupName := clusterName
+   //Create Azure resource group
+   createResourceGroup(clusterName, clusterRegion)
+   //Create AKS cluster
+   createCluster(clusterName, resourceGroupName)
+   //Get kubectl config copied to ~/.kube/getKubectlConfig
+   getKubectlConfig(clusterName, resourceGroupName)
+   //intialize helm
+   intializeHelm()
+   //Add helm repo inucubator
+   repoName := "incubator"
+   repoURL := "http://storage.googleapis.com/kubernetes-charts-incubator"
+   addHelmRepo(repoName, repoURL)
+   //Install ElasticSearch
+   installPackage("elasticsearch", repoName)
+   //Install Kafka
+   installPackage("kafka", repoName)
 }
