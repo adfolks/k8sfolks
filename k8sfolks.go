@@ -91,12 +91,14 @@ func addHelmRepo(repoName string, repoURL string) {
 }
 
 func createNamespace(nameSpace string) {
-	cmd := exec.Command("kubectl", "create", "namespace", "elasticsearch")
+	cmd := exec.Command("kubectl", "create", "namespace", nameSpace)
 	out, err := cmd.CombinedOutput()
   if err != nil {
-        log.Fatalf("Kubectl create namespace failed with: \n%s\n", err)
+        log.Fatalf("Kubectl create namespace %s failed with: \n%s\n",
+					nameSpace, err)
     }
-  fmt.Println("kubectl create namespace output:\n%s\n", string(out))
+  fmt.Println("kubectl create namespace %s output:\n%s\n", nameSpace,
+		string(out))
 
 }
 
